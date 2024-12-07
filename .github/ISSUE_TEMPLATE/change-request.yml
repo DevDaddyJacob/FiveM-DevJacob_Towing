@@ -1,0 +1,36 @@
+name: Change Request
+description: Request a modification to the product
+title: "[UPDATE] <title>"
+labels: "type :: feature"
+body:
+    - type: textarea
+      id: summary
+      attributes:
+          label: Summary
+          description: Outline the change being requested
+      validations:
+          required: true
+
+    - type: textarea
+      id: area
+      attributes:
+          label: Area of the system
+          value: N/A
+      validations:
+          required: false
+
+    - type: textarea
+      id: current-state
+      attributes:
+          label: How does this currently work?
+          description: Describe how things currently work
+      validations:
+          required: true
+
+    - type: textarea
+      id: desired-state
+      attributes:
+          label: What is the desired way of working?
+          description: Describe how things should work after the change
+      validations:
+          required: true

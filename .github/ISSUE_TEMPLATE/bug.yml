@@ -1,0 +1,45 @@
+name: Bug Report
+description: Report a bug with the product
+title: "[BUG] <title>"
+labels: "type :: bug"
+body:
+    - type: textarea
+      id: expected-behavior
+      attributes:
+          label: Expected Behavior
+          description: What is the expected behavior?
+      validations:
+          required: true
+
+    - type: textarea
+      id: current-behavior
+      attributes:
+          label: Current Behavior
+          description: What is the current behavior?
+      validations:
+          required: true
+
+    - type: textarea
+      id: information
+      attributes:
+          label: Information
+          description: Please help provide information about the bug
+      validations:
+          required: true
+
+    - type: textarea
+      id: reproduction-steps
+      attributes:
+          label: Reproduction Steps
+          description: Please provide detailed steps for reproducing the issue
+      validations:
+          required: true
+
+    - type: textarea
+      id: logs
+      attributes:
+          label: Log Files (If Applicable)
+          description: Please include any relevant log snippets or files here
+          render: shell
+      validations:
+          required: false
