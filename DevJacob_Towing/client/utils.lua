@@ -6,6 +6,13 @@ local CACHE = {
     GroundAtCoords = {},
 }
 
+
+function toInputString(cmd)
+    local hexStr = ("%x"):format(joaat(cmd))
+    local formattedHex = hexStr:sub(-8):upper()
+    return ("INPUT_%s"):format(formattedHex)
+end
+
 DEFAULT_HASH = `__DEFAULT`
 
 Logger = {

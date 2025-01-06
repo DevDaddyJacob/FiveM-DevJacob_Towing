@@ -1,9 +1,6 @@
-TowTruck = {
-    ACTION = {
-        NONE = 0,
-        LOWERING = 1,
-        RAISING = 2,
-    },
+PropTowTruck = {
+    ACTION = TowTruck.ACTION,
+    CONTROL_MODE = TowTruck.CONTROL_MODE,
     STATE = {
         NONE = -1,
         RAISED = 0,
@@ -13,17 +10,13 @@ TowTruck = {
         RAISINGTILT = 4,
         RAISINGSLIDE = 5,
     },
-    CONTROL_MODE = {
-        BED = -1,
-        WINCH = 0,
-    },
 }
-TowTruck.__index = TowTruck
+PropTowTruck.__index = PropTowTruck
 
-function TowTruck.new(truckConfig, truckHandle)
-    local self = setmetatable({}, TowTruck)
+function PropTowTruck.new(truckConfig, truckHandle)
+    local self = setmetatable({}, PropTowTruck)
 
-    self.config = TowTruck.ValidateConfig(truckConfig)
+    self.config = PropTowTruck.ValidateConfig(truckConfig)
     self.lerpVal = 0.0
     self.cache = {}
     self.hookThread = false
@@ -58,18 +51,41 @@ function TowTruck.new(truckConfig, truckHandle)
     }
 
     -- Control fields
-    self.controlMode = TowTruck.CONTROL_MODE.BED
+    self.controlMode = PropTowTruck.CONTROL_MODE.BED
 
 
-    Citizen.CreateThread(TowTruck.GetLifeCycleThread(self))
+    Citizen.CreateThread(PropTowTruck.GetLifeCycleThread(self))
 
     return self
 end
 
-function TowTruck.ValidateConfig(truckCfg)
+function PropTowTruck.ValidateConfig(truckCfg)
     if truckCfg == nil then return nil end
-    local defaultCfg = Config.TowTrucks[DEFAULT_HASH]
+    if TowTruck.ParseType(truckCfg.truckType) ~= TowTruck.TYPE.PROP_BASED then return nil end
+
     local newConfigTable = {}
+    local defaultCfg = {
+		lerpMult = 4.0,
+		hasRemote = true,
+		remoteStorageOffset = vector3(-1.05, -1.0, 0.0),
+		controlBoxOffset = vector3(-1.05, -1.0, 0.0),
+		hookRootOffset = vector3(0.025, 4.5, 0.1),
+		bedAttachOffset = vector3(0.0, 1.5, 0.3),
+		bedOffsets = {
+			raised = {
+				pos = vector3(0.0, -3.8, 0.45),
+				rot = vector3(0.0, 0.0, 0.0),
+			},
+			back = {
+				pos = vector3(0.0, -4.0, 0.0),
+				rot = vector3(0.0, 0.0, 0.0),
+			},
+			lowered = {
+				pos = vector3(0.0, -0.4, -1.0),
+				rot = vector3(12.0, 0.0, 0.0),
+			},
+		},
+    }
     
     local getValue = function(key, cfg)
         local _cfg = cfg or truckCfg
@@ -85,6 +101,7 @@ function TowTruck.ValidateConfig(truckCfg)
     truckCfg["bedOffsets"]["back"] = truckCfg["bedOffsets"]["back"] or {}
     truckCfg["bedOffsets"]["lowered"] = truckCfg["bedOffsets"]["lowered"] or {}
 
+    newConfigTable["truckType"] = TowTruck.TYPE.PROP_BASED
     newConfigTable["truckModel"] = truckCfg["truckModel"]
     newConfigTable["bedModel"] = truckCfg["bedModel"]
     newConfigTable["bedExtraIndex"] = getValue("bedExtraIndex")
@@ -111,7 +128,7 @@ function TowTruck.ValidateConfig(truckCfg)
     return newConfigTable
 end
 
-function TowTruck.GetLifeCycleThread(towTruck)
+function PropTowTruck.GetLifeCycleThread(towTruck)
     local threadFunc = function()
         while true do
             Citizen.Wait(0)
@@ -144,9 +161,9 @@ function TowTruck.GetLifeCycleThread(towTruck)
 
             -- Handle bed movement
             local action = towTruck:GetAction()
-            if action == TowTruck.ACTION.LOWERING then
+            if action == PropTowTruck.ACTION.LOWERING then
                 towTruck:LowerBed()
-            elseif action == TowTruck.ACTION.RAISING then
+            elseif action == PropTowTruck.ACTION.RAISING then
                 towTruck:RaiseBed()
             end
 
@@ -310,7 +327,7 @@ function TowTruck.GetLifeCycleThread(towTruck)
             -- Handle starting hook thread
             if towTruck.hookThread == false and isHookInUse and IsEntityAttachedToEntity(playerPed, towTruck.hookPropHandle) == 1 then
                 -- Handle attaching to vehicles
-                Citizen.CreateThread(TowTruck.GetHookThread(towTruck))
+                Citizen.CreateThread(PropTowTruck.GetHookThread(towTruck))
             end
 
             towTruck:DisplayPromptsThisFrame()
@@ -357,7 +374,7 @@ function TowTruck.GetLifeCycleThread(towTruck)
     return threadFunc
 end
 
-function TowTruck.GetHookThread(towTruck)
+function PropTowTruck.GetHookThread(towTruck)
     local threadFunc = function()
         if towTruck.hookThread == true then
             return
@@ -465,7 +482,7 @@ function TowTruck.GetHookThread(towTruck)
     return threadFunc
 end
 
-function TowTruck:IsRemoteInUse()
+function PropTowTruck:IsRemoteInUse()
     if self.config.hasRemote == false then
         return false
     end
@@ -473,19 +490,19 @@ function TowTruck:IsRemoteInUse()
     return self.remotePropHandle ~= nil
 end
 
-function TowTruck:CanControlBed()
-    return self.cache.canControlBed == true
+function PropTowTruck:CanControlBed()
+    return self.cache.canControlBed == true or self:IsRemoteInUse()
 end
 
-function TowTruck:IsHookInUse()
+function PropTowTruck:IsHookInUse()
     return self.hookPropHandle ~= nil
 end
 
-function TowTruck:IsCarHooked()
+function PropTowTruck:IsCarHooked()
     return self.towingCarHandle ~= nil
 end
 
-function TowTruck:GetBoneIndexByName(name)
+function PropTowTruck:GetBoneIndexByName(name)
     if self.cache.boneIndexes == nil then
         self.cache.boneIndexes = {}
     end
@@ -502,7 +519,7 @@ function TowTruck:GetBoneIndexByName(name)
     return boneIndex
 end
 
-function TowTruck:Destroy(deleteVehicle)
+function PropTowTruck:Destroy(deleteVehicle)
     if self.bedHandle ~= nil and DoesEntityExist(self.bedHandle) then
         DeleteEntity(self.bedHandle)
         self.bedHandle = nil
@@ -542,37 +559,37 @@ function TowTruck:Destroy(deleteVehicle)
     self:SetAction(nil)
 end
 
-function TowTruck:GetState()
+function PropTowTruck:GetState()
     local bagValue = Entity(self.truckHandle).state["DevJacob_Tow:State"]
     
     if bagValue == nil then
-        self:SetState(TowTruck.STATE.NONE)
-        return TowTruck.STATE.NONE
+        self:SetState(PropTowTruck.STATE.NONE)
+        return PropTowTruck.STATE.NONE
     end
 
     return bagValue
 end
 
-function TowTruck:SetState(state)
+function PropTowTruck:SetState(state)
     Entity(self.truckHandle).state:set("DevJacob_Tow:State", state, true)
 end
 
-function TowTruck:GetAction()
+function PropTowTruck:GetAction()
     local bagValue = Entity(self.truckHandle).state["DevJacob_Tow:Action"]
     
     if bagValue == nil then
-        self:SetState(TowTruck.ACTION.NONE)
-        return TowTruck.ACTION.NONE
+        self:SetState(PropTowTruck.ACTION.NONE)
+        return PropTowTruck.ACTION.NONE
     end
 
     return bagValue
 end
 
-function TowTruck:SetAction(action)
+function PropTowTruck:SetAction(action)
     Entity(self.truckHandle).state:set("DevJacob_Tow:Action", action, true)
 end
 
-function TowTruck:GetBedNetId()
+function PropTowTruck:GetBedNetId()
     local bagValue = Entity(self.truckHandle).state["DevJacob_Tow:SummonedBed"]
     
     if bagValue == nil then
@@ -594,12 +611,12 @@ function TowTruck:GetBedNetId()
     return bagValue
 end
 
-function TowTruck:SetBedNetId(objNetId)
+function PropTowTruck:SetBedNetId(objNetId)
     Entity(self.truckHandle).state:set("DevJacob_Tow:SummonedBed", objNetId, true)
     self.bedHandle = NetToObj(objNetId)
 end
 
-function TowTruck:GetTowingCarNetId()
+function PropTowTruck:GetTowingCarNetId()
     local bagValue = Entity(self.truckHandle).state["DevJacob_Tow:TowingCar"]
     
     if bagValue == nil then
@@ -615,24 +632,18 @@ function TowTruck:GetTowingCarNetId()
     return bagValue
 end
 
-function TowTruck:SetTowingCar(car)
+function PropTowTruck:SetTowingCar(car)
     Entity(self.truckHandle).state:set("DevJacob_Tow:TowingCar", car, true)
     self.towingCarHandle = Ternary(car == nil, nil, NetToObj(car))
 end
 
-function TowTruck:DisplayBedControlsThisFrame()
+function PropTowTruck:DisplayBedControlsThisFrame()
     local data = self.prompts.bedControls
     local prompts = {}
     
     if data["controlBed"] == true then
-        prompts[#prompts + 1] = "DevJacob_LowerBed ~INPUT_E3FFBA85~"
-        prompts[#prompts + 1] = "+DevJacob_LowerBed ~INPUT_7BDC995~"
-        prompts[#prompts + 1] = "-DevJacob_LowerBed ~INPUT_5A2CDCCD~"
-        prompts[#prompts + 1] = "DevJacob_RaiseBed ~INPUT_BB844AB~"
-        prompts[#prompts + 1] = "+DevJacob_RaiseBed ~INPUT_1CE77242~"
-        prompts[#prompts + 1] = "-DevJacob_RaiseBed ~INPUT_F67BAF75~"
-        prompts[#prompts + 1] = "Press ~INPUT_1CE77242~ . ~INPUT_BB844AB~ to raise bed"
-        prompts[#prompts + 1] = "Press ~INPUT_7BDC995~ . ~INPUT_E3FFBA85~ to lower bed"
+        prompts[#prompts + 1] = ("Press ~%s~ to raise bed"):format(toInputString("+towingBedRaise"))
+        prompts[#prompts + 1] = ("Press ~%s~ to lower bed"):format(toInputString("+towingBedLower"))
     end
 
     if self.config.hasRemote == true then
@@ -662,7 +673,7 @@ function TowTruck:DisplayBedControlsThisFrame()
     }
 end
 
-function TowTruck:DisplayWinchControlsThisFrame()
+function PropTowTruck:DisplayWinchControlsThisFrame()
     local data = self.prompts.winchControls
     local prompts = {}
     
@@ -715,39 +726,39 @@ function TowTruck:DisplayWinchControlsThisFrame()
     }
 end
 
-function TowTruck:DisplayPromptsThisFrame()
+function PropTowTruck:DisplayPromptsThisFrame()
     self:DisplayBedControlsThisFrame()
     self:DisplayWinchControlsThisFrame()
 end
 
-function TowTruck:LowerBed()
+function PropTowTruck:LowerBed()
     local origState = self:GetState()
     local state = origState
 
     -- If the bed is already down, stop
-    if state == TowTruck.STATE.LOWERED then
+    if state == PropTowTruck.STATE.LOWERED then
         return
     end
 
     -- If the bed is in the init state or raised, set the state to slide to start movement
-    if state == TowTruck.STATE.RAISED or state == TowTruck.STATE.NONE then
-        state = TowTruck.STATE.LOWERINGSLIDE
+    if state == PropTowTruck.STATE.RAISED or state == PropTowTruck.STATE.NONE then
+        state = PropTowTruck.STATE.LOWERINGSLIDE
     end
 
     -- If we are mid slide back, start in side state
-    if state == TowTruck.STATE.RAISINGSLIDE then
-        state = TowTruck.STATE.LOWERINGSLIDE
+    if state == PropTowTruck.STATE.RAISINGSLIDE then
+        state = PropTowTruck.STATE.LOWERINGSLIDE
         self.lerpVal = 1.0 - self.lerpVal
     end
 
     -- If we are mid raise tilt, start in tilt state
-    if state == TowTruck.STATE.RAISINGTILT then
-        state = TowTruck.STATE.LOWERINGTILT
+    if state == PropTowTruck.STATE.RAISINGTILT then
+        state = PropTowTruck.STATE.LOWERINGTILT
         self.lerpVal = 1.0 - self.lerpVal
     end
 
     -- Process actual movement
-    if state == TowTruck.STATE.LOWERINGSLIDE then
+    if state == PropTowTruck.STATE.LOWERINGSLIDE then
         local offsetPos = self.config.bedOffsets.raised.pos + LerpVector3(0.0, self.config.bedOffsets.back.pos, self.lerpVal)
         local offsetRot = self.config.bedOffsets.raised.rot + LerpVector3(0.0, self.config.bedOffsets.back.rot, self.lerpVal)
 
@@ -757,11 +768,11 @@ function TowTruck:LowerBed()
         self.lerpVal = self.lerpVal + (1.0 * Timestep()) / self.config.lerpMult
 
         if self.lerpVal >= 1.0 then
-            state = TowTruck.STATE.LOWERINGTILT
+            state = PropTowTruck.STATE.LOWERINGTILT
             self.lerpVal = 0.0
         end
 
-    elseif state == TowTruck.STATE.LOWERINGTILT then
+    elseif state == PropTowTruck.STATE.LOWERINGTILT then
         local offsetPos = self.config.bedOffsets.raised.pos + self.config.bedOffsets.back.pos + LerpVector3(0.0, self.config.bedOffsets.lowered.pos, self.lerpVal)
         local offsetRot = self.config.bedOffsets.raised.rot + self.config.bedOffsets.back.rot + LerpVector3(0.0, self.config.bedOffsets.lowered.rot, self.lerpVal)
 
@@ -771,7 +782,7 @@ function TowTruck:LowerBed()
         self.lerpVal = self.lerpVal + (1.0 * Timestep()) / self.config.lerpMult
 
         if self.lerpVal >= 1.0 then
-            state = TowTruck.STATE.LOWERED
+            state = PropTowTruck.STATE.LOWERED
             self.lerpVal = 0.0
         end
 
@@ -783,34 +794,34 @@ function TowTruck:LowerBed()
     end
 end
 
-function TowTruck:RaiseBed()
+function PropTowTruck:RaiseBed()
     local origState = self:GetState()
     local state = origState
 
     -- If the bed is already up, stop
-    if state == TowTruck.STATE.RAISED then
+    if state == PropTowTruck.STATE.RAISED then
         return
     end
 
     -- If the bed is in the lowered state, set the state to tilt to start movement
-    if state == TowTruck.STATE.LOWERED then
-        state = TowTruck.STATE.RAISINGTILT
+    if state == PropTowTruck.STATE.LOWERED then
+        state = PropTowTruck.STATE.RAISINGTILT
     end
 
     -- If we are mid slide back, start in side state
-    if state == TowTruck.STATE.LOWERINGSLIDE then
-        state = TowTruck.STATE.RAISINGSLIDE
+    if state == PropTowTruck.STATE.LOWERINGSLIDE then
+        state = PropTowTruck.STATE.RAISINGSLIDE
         self.lerpVal = 1.0 - self.lerpVal
     end
 
     -- If we are mid lower tilt, start in tilt state
-    if state == TowTruck.STATE.LOWERINGTILT then
-        state = TowTruck.STATE.RAISINGTILT
+    if state == PropTowTruck.STATE.LOWERINGTILT then
+        state = PropTowTruck.STATE.RAISINGTILT
         self.lerpVal = 1.0 - self.lerpVal
     end
 
     -- Process actual movement
-    if state == TowTruck.STATE.RAISINGTILT then
+    if state == PropTowTruck.STATE.RAISINGTILT then
         local offsetPos = self.config.bedOffsets.raised.pos + self.config.bedOffsets.back.pos + LerpVector3(self.config.bedOffsets.lowered.pos, 0.0, self.lerpVal)
         local offsetRot = self.config.bedOffsets.raised.rot + self.config.bedOffsets.back.rot + LerpVector3(self.config.bedOffsets.lowered.rot, 0.0, self.lerpVal)
 
@@ -820,11 +831,11 @@ function TowTruck:RaiseBed()
         self.lerpVal = self.lerpVal + (1.0 * Timestep()) / self.config.lerpMult
 
         if self.lerpVal >= 1.0 then
-            state = TowTruck.STATE.RAISINGSLIDE
+            state = PropTowTruck.STATE.RAISINGSLIDE
             self.lerpVal = 0.0
         end
 
-    elseif state == TowTruck.STATE.RAISINGSLIDE then
+    elseif state == PropTowTruck.STATE.RAISINGSLIDE then
         local offsetPos = self.config.bedOffsets.raised.pos + LerpVector3(self.config.bedOffsets.back.pos, 0.0, self.lerpVal)
         local offsetRot = self.config.bedOffsets.raised.rot + LerpVector3(self.config.bedOffsets.back.rot, 0.0, self.lerpVal)
 
@@ -834,7 +845,7 @@ function TowTruck:RaiseBed()
         self.lerpVal = self.lerpVal + (1.0 * Timestep()) / self.config.lerpMult
 
         if self.lerpVal >= 1.0 then
-            state = TowTruck.STATE.RAISED
+            state = PropTowTruck.STATE.RAISED
             self.lerpVal = 0.0
         end
 
@@ -846,18 +857,18 @@ function TowTruck:RaiseBed()
     end
 end
 
-function TowTruck:AttachBedToTruck(offset, rotation, collision)
+function PropTowTruck:AttachBedToTruck(offset, rotation, collision)
     collision = collision or true
 
     local chassisBoneIndex = self:GetBoneIndexByName("chassis")
     AttachEntityToEntity(self.bedHandle, self.truckHandle, chassisBoneIndex, offset, rotation, false, false, collision, false, 0, true)
 end
 
-function TowTruck:DetachBed()
+function PropTowTruck:DetachBed()
     DetachEntity(self.bedHandle, false, false)
 end
 
-function TowTruck:AttachCarToBed()
+function PropTowTruck:AttachCarToBed()
     local towingCarHandle = NetToVeh(self:GetTowingCarNetId())
     local carPos = GetEntityCoords(towingCarHandle, false)
     local bedPos = GetEntityCoords(self.bedHandle, false)
@@ -870,12 +881,12 @@ function TowTruck:AttachCarToBed()
     AttachEntityToEntity(towingCarHandle, self.bedHandle, 0, attachPos, attachRot, false, false, false, false, 2, true)
 end
 
-function TowTruck:DetachCar()
+function PropTowTruck:DetachCar()
     local towingCarHandle = NetToVeh(self:GetTowingCarNetId())
     DetachEntity(towingCarHandle, false, false)
 end
 
-function TowTruck:GrabRemoteAsync(ped)
+function PropTowTruck:GrabRemoteAsync(ped)
     local _promise = promise.new()
 
     local runFunc = function()
@@ -970,7 +981,7 @@ function TowTruck:GrabRemoteAsync(ped)
 
 end
 
-function TowTruck:GrabHookAsync(ped)
+function PropTowTruck:GrabHookAsync(ped)
     local _promise = promise.new()
 
     local runFunc = function()

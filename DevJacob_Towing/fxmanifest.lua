@@ -12,6 +12,8 @@ shared_scripts {
 
 client_scripts {
 	"client/utils.lua",
-	"client/towTruck.lua",
+	"client/classes/towTruck.lua",
+	"client/classes/scoopBased.lua",
+	"client/classes/propBased.lua",
 	"client/main.lua",
 }
