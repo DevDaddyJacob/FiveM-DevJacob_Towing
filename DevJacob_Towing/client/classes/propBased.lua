@@ -335,7 +335,7 @@ function PropTowTruck.GetLifeCycleThread(towTruck)
             -- Debug Stuff
             if Config["DebugMode"] == true then
                 local _DrawText2DThisFrame = function(x, y, text)
-                    DrawText2DThisFrame({
+                    drawText2DThisFrame({
                         coords = vector2(x, y),
                         text = text,
                         scale = 0.45,
@@ -349,7 +349,7 @@ function PropTowTruck.GetLifeCycleThread(towTruck)
                 end
                 _DrawText2DThisFrame(0.02, 0.3, "Tow Truck State: " .. towTruck:GetState())
                 _DrawText2DThisFrame(0.02, 0.325, "Tow Truck Action: " .. towTruck:GetAction())
-                _DrawText2DThisFrame(0.02, 0.35, "Tow Truck Lerp: " .. towTruck.lerpVal)
+                _DrawText2DThisFrame(0.02, 0.35, "Tow Truck lerp: " .. towTruck.lerpVal)
                 _DrawText2DThisFrame(0.02, 0.4, "Tow Truck Hook Storage Dist: " .. hookStorageDist)
 
                 if towTruck.towingCarHandle ~= nil then
@@ -393,7 +393,7 @@ function PropTowTruck.GetHookThread(towTruck)
                 
                 local camCoords = GetFinalRenderedCamCoord()
                 local camRot = GetFinalRenderedCamRot(2)
-                local destination = GetOffsetFromCoordsInWorldCoords(camCoords, camRot, vector3(0.0, Config["MaxHookReach"], 0.0))
+                local destination = getOffsetFromCoordsInWorldCoords(camCoords, camRot, vector3(0.0, Config["MaxHookReach"], 0.0))
                 local castHandle = StartShapeTestLosProbe(camCoords, destination, 4294967295, 0, 4)
             
                 local state, hit, endCoords, surfaceNormal, entityHit = GetShapeTestResult(castHandle)
@@ -425,7 +425,7 @@ function PropTowTruck.GetHookThread(towTruck)
                 if lastCastResult ~= nil then
                     local canAttach = lastCastResult.hit and lastCastResult.entityHit ~= nil and DoesEntityExist(lastCastResult.entityHit) 
                         and IsEntityAVehicle(lastCastResult.entityHit) and lastCastResult.entityHit ~= towTruck.truckHandle
-                    local endRgb = Ternary(canAttach, { r = 0, g = 255, b = 0 }, { r = 255, g = 0, b = 0 })
+                    local endRgb = ternary(canAttach, { r = 0, g = 255, b = 0 }, { r = 255, g = 0, b = 0 })
                 
                     DrawMarker(28, lastCastResult.endCoords.x, lastCastResult.endCoords.y, lastCastResult.endCoords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, endRgb.r, endRgb.g, endRgb.b, 100, false, true, 2, nil, nil, false)
 
@@ -634,7 +634,7 @@ end
 
 function PropTowTruck:SetTowingCar(car)
     Entity(self.truckHandle).state:set("DevJacob_Tow:TowingCar", car, true)
-    self.towingCarHandle = Ternary(car == nil, nil, NetToObj(car))
+    self.towingCarHandle = ternary(car == nil, nil, NetToObj(car))
 end
 
 function PropTowTruck:DisplayBedControlsThisFrame()
@@ -759,8 +759,8 @@ function PropTowTruck:LowerBed()
 
     -- Process actual movement
     if state == PropTowTruck.STATE.LOWERINGSLIDE then
-        local offsetPos = self.config.bedOffsets.raised.pos + LerpVector3(0.0, self.config.bedOffsets.back.pos, self.lerpVal)
-        local offsetRot = self.config.bedOffsets.raised.rot + LerpVector3(0.0, self.config.bedOffsets.back.rot, self.lerpVal)
+        local offsetPos = self.config.bedOffsets.raised.pos + lerpVector3(0.0, self.config.bedOffsets.back.pos, self.lerpVal)
+        local offsetRot = self.config.bedOffsets.raised.rot + lerpVector3(0.0, self.config.bedOffsets.back.rot, self.lerpVal)
 
         self:DetachBed()
         self:AttachBedToTruck(offsetPos, offsetRot, true)
@@ -773,8 +773,8 @@ function PropTowTruck:LowerBed()
         end
 
     elseif state == PropTowTruck.STATE.LOWERINGTILT then
-        local offsetPos = self.config.bedOffsets.raised.pos + self.config.bedOffsets.back.pos + LerpVector3(0.0, self.config.bedOffsets.lowered.pos, self.lerpVal)
-        local offsetRot = self.config.bedOffsets.raised.rot + self.config.bedOffsets.back.rot + LerpVector3(0.0, self.config.bedOffsets.lowered.rot, self.lerpVal)
+        local offsetPos = self.config.bedOffsets.raised.pos + self.config.bedOffsets.back.pos + lerpVector3(0.0, self.config.bedOffsets.lowered.pos, self.lerpVal)
+        local offsetRot = self.config.bedOffsets.raised.rot + self.config.bedOffsets.back.rot + lerpVector3(0.0, self.config.bedOffsets.lowered.rot, self.lerpVal)
 
         self:DetachBed()
         self:AttachBedToTruck(offsetPos, offsetRot, true)
@@ -822,8 +822,8 @@ function PropTowTruck:RaiseBed()
 
     -- Process actual movement
     if state == PropTowTruck.STATE.RAISINGTILT then
-        local offsetPos = self.config.bedOffsets.raised.pos + self.config.bedOffsets.back.pos + LerpVector3(self.config.bedOffsets.lowered.pos, 0.0, self.lerpVal)
-        local offsetRot = self.config.bedOffsets.raised.rot + self.config.bedOffsets.back.rot + LerpVector3(self.config.bedOffsets.lowered.rot, 0.0, self.lerpVal)
+        local offsetPos = self.config.bedOffsets.raised.pos + self.config.bedOffsets.back.pos + lerpVector3(self.config.bedOffsets.lowered.pos, 0.0, self.lerpVal)
+        local offsetRot = self.config.bedOffsets.raised.rot + self.config.bedOffsets.back.rot + lerpVector3(self.config.bedOffsets.lowered.rot, 0.0, self.lerpVal)
 
         self:DetachBed()
         self:AttachBedToTruck(offsetPos, offsetRot, true)
@@ -836,8 +836,8 @@ function PropTowTruck:RaiseBed()
         end
 
     elseif state == PropTowTruck.STATE.RAISINGSLIDE then
-        local offsetPos = self.config.bedOffsets.raised.pos + LerpVector3(self.config.bedOffsets.back.pos, 0.0, self.lerpVal)
-        local offsetRot = self.config.bedOffsets.raised.rot + LerpVector3(self.config.bedOffsets.back.rot, 0.0, self.lerpVal)
+        local offsetPos = self.config.bedOffsets.raised.pos + lerpVector3(self.config.bedOffsets.back.pos, 0.0, self.lerpVal)
+        local offsetRot = self.config.bedOffsets.raised.rot + lerpVector3(self.config.bedOffsets.back.rot, 0.0, self.lerpVal)
 
         self:DetachBed()
         self:AttachBedToTruck(offsetPos, offsetRot, true)
@@ -876,7 +876,7 @@ function PropTowTruck:AttachCarToBed()
 
     local bedRot = GetEntityRotation(self.bedHandle, 2)
     local carRot = GetEntityRotation(towingCarHandle, 2)
-    local attachRot = GetOffsetBetweenRotations(bedRot, carRot)
+    local attachRot = getOffsetBetweenRotations(bedRot, carRot)
 
     AttachEntityToEntity(towingCarHandle, self.bedHandle, 0, attachPos, attachRot, false, false, false, false, 2, true)
 end
@@ -891,7 +891,7 @@ function PropTowTruck:GrabRemoteAsync(ped)
 
     local runFunc = function()
         -- Load prop model
-        local modelLoaded = Citizen.Await(RequestModelAsync(Config["RemoteModel"]))
+        local modelLoaded = Citizen.Await(requestModelAsync(Config["RemoteModel"]))
         if modelLoaded == false then
             Logger.Error(("Failed to load model \"%s\""):format(Config["RemoteModel"]))
             _promise:reject()
@@ -915,7 +915,7 @@ function PropTowTruck:GrabRemoteAsync(ped)
         AttachEntityToEntity(self.remotePropHandle, ped, boneIndex, 0.1, 0.1, 0.0, 180.0, -65.0, -80.0, false, false, false, true, 2, true)
 
         -- Load rope textures
-        local texturesLoaded = Citizen.Await(LoadRopeTexturesAsync())
+        local texturesLoaded = Citizen.Await(loadRopeTexturesAsync())
         if texturesLoaded == false then
             Logger.Error("Failed to load rope textures")
             _promise:reject("Failed to load rope textures")
@@ -944,7 +944,7 @@ function PropTowTruck:GrabRemoteAsync(ped)
                     
                     for i = 0, totalVerts - 1 do
                         local vertCoords = GetRopeVertexCoord(self.remoteRopeHandle, i)
-                        local groundedCoords = GroundCoords(vertCoords)
+                        local groundedCoords = groundCoords(vertCoords)
                         groundedCoords = vector3(groundedCoords.x, groundedCoords.y, groundedCoords.z + 0.03)
 
                         RopeSetUpdatePinverts(self.remoteRopeHandle)
@@ -986,7 +986,7 @@ function PropTowTruck:GrabHookAsync(ped)
 
     local runFunc = function()
         -- Load prop model
-        local modelLoaded = Citizen.Await(RequestModelAsync(Config["HookModel"]))
+        local modelLoaded = Citizen.Await(requestModelAsync(Config["HookModel"]))
         if modelLoaded == false then
             Logger.Error(("Failed to load model \"%s\""):format(Config["HookModel"]))
             _promise:reject()
@@ -1009,7 +1009,7 @@ function PropTowTruck:GrabHookAsync(ped)
         AttachEntityToEntity(self.hookPropHandle, ped, boneIndex, 0.175, -0.1, 0.07, 0.0, -75.0, 90.0, false, false, false, false, 2, true)
 
         -- Load rope textures
-        local texturesLoaded = Citizen.Await(LoadRopeTexturesAsync())
+        local texturesLoaded = Citizen.Await(loadRopeTexturesAsync())
         if texturesLoaded == false then
             Logger.Error("Failed to load rope textures")
             _promise:reject()

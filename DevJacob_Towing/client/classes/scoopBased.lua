@@ -243,7 +243,7 @@ end
             
         --     local carRot = GetEntityRotation(towingCarHandle, 2)
         --     local attachPointRot = GetEntityBoneRotation(self.truckHandle, self.attachBoneIndex)
-        --     local attachRot = GetOffsetBetweenRotations(attachPointRot, carRot)
+        --     local attachRot = getOffsetBetweenRotations(attachPointRot, carRot)
         --     print("carRot", carRot)
         --     print("attachPointRot", attachPointRot)
         --     print("attachRot", attachRot)
@@ -359,7 +359,7 @@ end
         end
 
         local _DrawText2DThisFrame = function(x, y, text)
-            DrawText2DThisFrame({
+            drawText2DThisFrame({
                 coords = vector2(x, y),
                 text = text,
                 scale = 0.45,
@@ -403,7 +403,7 @@ end
             local carRot = GetEntityRotation(self.towingCarHandle, 2)
             drawAlignedText(0.02, "Car Rot: " .. carRot)
     
-            local attachRot = GetOffsetBetweenRotations(modifiedTruckRot, carRot)
+            local attachRot = getOffsetBetweenRotations(modifiedTruckRot, carRot)
             drawAlignedText(0.02, "Attachment Rot: " .. attachRot)
         end
 
@@ -456,7 +456,7 @@ end
         local bonePos = GetWorldPositionOfEntityBone(self.truckHandle, self.hookBoneIndex)
         local boneRot = GetEntityBoneRotation(self.truckHandle, self.hookBoneIndex)
 
-        return GetOffsetFromCoordsInWorldCoords(bonePos, boneRot, self.config.hookRoot.offset)
+        return getOffsetFromCoordsInWorldCoords(bonePos, boneRot, self.config.hookRoot.offset)
     end
 
     function ScoopTowTruck:GetHookStorageEntityOffset()
@@ -477,7 +477,7 @@ end
         local bonePos = GetWorldPositionOfEntityBone(self.truckHandle, self.attachBoneIndex)
         local boneRot = GetEntityBoneRotation(self.truckHandle, self.attachBoneIndex)
 
-        return GetOffsetFromCoordsInWorldCoords(bonePos, boneRot, self.config.bedAttach.offset)
+        return getOffsetFromCoordsInWorldCoords(bonePos, boneRot, self.config.bedAttach.offset)
     end
 
     function ScoopTowTruck:GetAttachPointEntityOffset()
@@ -754,7 +754,7 @@ end
                     
                     local camCoords = GetFinalRenderedCamCoord()
                     local camRot = GetFinalRenderedCamRot(2)
-                    local destination = GetOffsetFromCoordsInWorldCoords(camCoords, camRot, vector3(0.0, Config["MaxHookReach"], 0.0))
+                    local destination = getOffsetFromCoordsInWorldCoords(camCoords, camRot, vector3(0.0, Config["MaxHookReach"], 0.0))
                     local castHandle = StartShapeTestLosProbe(camCoords, destination, 4294967295, 0, 4)
                 
                     local state, hit, endCoords, surfaceNormal, entityHit = GetShapeTestResult(castHandle)
@@ -786,7 +786,7 @@ end
                     if lastCastResult ~= nil then
                         local canAttach = lastCastResult.hit and lastCastResult.entityHit ~= nil and DoesEntityExist(lastCastResult.entityHit) 
                             and IsEntityAVehicle(lastCastResult.entityHit) and lastCastResult.entityHit ~= towTruck.truckHandle
-                        local endRgb = Ternary(canAttach, { r = 0, g = 255, b = 0 }, { r = 255, g = 0, b = 0 })
+                        local endRgb = ternary(canAttach, { r = 0, g = 255, b = 0 }, { r = 255, g = 0, b = 0 })
                     
                         DrawMarker(28, lastCastResult.endCoords.x, lastCastResult.endCoords.y, lastCastResult.endCoords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.1, 0.1, endRgb.r, endRgb.g, endRgb.b, 100, false, true, 2, nil, nil, false)
     
@@ -853,7 +853,7 @@ end
 
         local runFunc = function()
             -- Load prop model
-            local modelLoaded = Citizen.Await(RequestModelAsync(Config["HookModel"]))
+            local modelLoaded = Citizen.Await(requestModelAsync(Config["HookModel"]))
             if modelLoaded == false then
                 Logger.Error(("Failed to load model \"%s\""):format(Config["HookModel"]))
                 _promise:reject()
@@ -876,7 +876,7 @@ end
             AttachEntityToEntity(self.hookPropHandle, ped, boneIndex, 0.175, -0.1, 0.07, 0.0, -75.0, 90.0, false, false, false, false, 2, true)
 
             -- Load rope textures
-            local texturesLoaded = Citizen.Await(LoadRopeTexturesAsync())
+            local texturesLoaded = Citizen.Await(loadRopeTexturesAsync())
             if texturesLoaded == false then
                 Logger.Error("Failed to load rope textures")
                 _promise:reject()
@@ -938,7 +938,7 @@ end
 
     function ScoopTowTruck:SetTowingCar(car)
         Entity(self.truckHandle).state:set("DevJacob_Tow:TowingCar", car, true)
-        self.towingCarHandle = Ternary(car == nil, nil, NetToObj(car))
+        self.towingCarHandle = ternary(car == nil, nil, NetToObj(car))
     end
 
     function ScoopTowTruck:IsCarHooked()
@@ -956,7 +956,7 @@ end
         local attachPointRotLocal = GetEntityBoneRotationLocal(self.truckHandle, self.attachBoneIndex)
         local modifiedTruckRot = vector3(attachPointRotLocal.x, truckRot.y, truckRot.z)
         local carRot = GetEntityRotation(self.towingCarHandle, 2)
-        local attachRot = GetOffsetBetweenRotations(modifiedTruckRot, carRot)
+        local attachRot = getOffsetBetweenRotations(modifiedTruckRot, carRot)
         local finalRot = vector3(0, attachRot.y, attachRot.z)
     
         AttachEntityToEntity(towingCarHandle, self.truckHandle, self.attachBoneIndex, attachPos, finalRot, false, false, false, false, 2, true)

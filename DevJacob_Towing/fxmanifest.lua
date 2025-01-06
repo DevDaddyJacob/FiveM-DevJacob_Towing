@@ -4,9 +4,10 @@ game "gta5"
 
 author "DevJacob"
 description "A realistic towing script for FiveM"
-version "0.1.0"
+version "1.1.0"
 
 shared_scripts {
+	"shared/utils.lua",
 	"shared/config.lua",
 }
 
