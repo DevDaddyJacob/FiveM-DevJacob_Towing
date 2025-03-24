@@ -4,7 +4,7 @@ DevJacob_Towing is a advanced FiveM towing script which allows players to have a
 The script as of version 1 only supports flatbed tow trucks which have their bed togglable as an extra, and have the bed available as a object to be spawned.
 
 ### Installation
-Installing the resource is simple, just download the latest version from the [releases](https://github.com/JayPaulinCodes/FiveM-DevJacob_Towing/releases/latest) tab, place the "DevJacob_Towing" folder into your FiveM resources folder and then add `ensure DevJacob_Towing` to your server.cfg file.
+Installing the resource is simple, just download the latest version from the [releases](https://github.com/DevDaddyJacob/FiveM-DevJacob_Towing/releases/latest) tab, place the "DevJacob_Towing" folder into your FiveM resources folder and then add `ensure DevJacob_Towing` to your server.cfg file.
 
 You can also add tow trucks from the "[DevJacob_TowingAssets]" folder which are tow trucks ready to use with the script.
 
