@@ -62,19 +62,19 @@ function loadRopeTexturesAsync(timeout)
 
     local runFunc = function()
         -- Check if the textures are loaded
-        if not RopeAreTexturesLoaded(modelHash) then
+        if RopeAreTexturesLoaded() then
             _promise:resolve(true)
         end
 
         -- Try to load the textures
         local timer = 0
-        while not RopeAreTexturesLoaded(modelHash) and timer < timeout do
-            RopeLoadTextures(modelHash)
+        while not RopeAreTexturesLoaded() and timer < timeout do
+            RopeLoadTextures()
             timer = timer + 1
             Citizen.Wait(1)
         end
 
-        local result = RopeAreTexturesLoaded(modelHash)
+        local result = RopeAreTexturesLoaded()
         _promise:resolve(result == 1)
     end
 
@@ -152,4 +152,38 @@ function drawText2DThisFrame(drawOptions)
     BeginTextCommandDisplayText("STRING")
     AddTextComponentSubstringPlayerName(text)
     EndTextCommandDisplayText(coords.x, coords.y)
+end
+
+function networkEntity(handle, takeControl, canMigrate)
+    SetEntityAsMissionEntity(handle, true, true)
+    
+    if not NetworkGetEntityIsNetworked(handle) then
+        local attempts = 1
+        while attempts <= 10 and not NetworkGetEntityIsNetworked(handle) do
+            attempts = attempts + 1
+            NetworkRegisterEntityAsNetworked(handle)
+            
+            Citizen.Wait(100)
+        end
+    end
+
+    local netId = ObjToNet(handle)
+    SetNetworkIdExistsOnAllMachines(netId, true)
+    SetNetworkIdCanMigrate(netId, true)
+
+    if takeControl == true then
+        local attempts = 1
+        while attempts <= 15 and not NetworkHasControlOfNetworkId(netId) do
+            attempts = attempts + 1
+            NetworkRequestControlOfNetworkId(netId)
+            
+            Citizen.Wait(100)
+        end
+
+        if NetworkHasControlOfNetworkId(netId) and canMigrate == false then
+            SetNetworkIdCanMigrate(netId, false)
+        end
+    end
+
+    return netId
 end
