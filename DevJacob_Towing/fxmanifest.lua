@@ -16,5 +16,6 @@ client_scripts {
 	"client/classes/towTruck.lua",
 	"client/classes/scoopBased.lua",
 	"client/classes/propBased.lua",
+	"client/ropes.lua",
 	"client/main.lua",
 }

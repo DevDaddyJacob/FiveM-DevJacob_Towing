@@ -18,7 +18,7 @@ end)
 -- Vehicle detection thread
 Citizen.CreateThread(function()
     while true do
-        Wait(100)
+        Citizen.Wait(100)
         local playerPed = PlayerPedId()
         local vehicle = GetVehiclePedIsIn(playerPed, true)
         
